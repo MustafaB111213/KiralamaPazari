@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-e50u4n!x%vm3#l^-&qan)e478kxe-8!-pnnj-v%)9p3)g%5n-3
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['10.14.2.29', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['10.14.2.45', 'localhost', '127.0.0.1']
 
 
 # Application definition
@@ -40,9 +40,14 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'api',
+    'corsheaders',
+
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  # Bunu listenin en başına ekleyin
+
+
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -128,3 +133,5 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+CORS_ALLOW_ALL_ORIGINS = True

@@ -17,7 +17,7 @@ export default function AuthScreen() {
 
   // Gerçek cihaz kullanıyorsanız API_URL'i bilgisayarınızın LAN IP adresine göre ayarlayın.
   // Örneğin: 'http://192.168.1.100:8000/api'
-  const API_URL = 'http://10.14.2.45:8000/api';
+  const API_URL = 'http://10.61.0.28:8000/api';
 
   const handleAuth = async () => {
     if (!email || !email.includes('@')) {

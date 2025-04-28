@@ -51,7 +51,7 @@ export default function AuthScreen() {
       }
   
       // Giriş yaptıktan sonra (veya yeni kayıt sonrası) profile git
-      router.push('/profile');
+      router.push('/home');
     } catch (error: any) {
       if (error.response) {
         console.error('Hata:', error.response.data);

@@ -20,7 +20,7 @@ function AuthScreen() {
 
   const handleAuth = async (e) => {
     e.preventDefault();
-
+  
     if (!email || !email.includes('@')) {
       alert('Lütfen geçerli bir email adresi girin.');
       return;
@@ -33,7 +33,7 @@ function AuthScreen() {
       alert('Lütfen adınızı ve soyadınızı girin.');
       return;
     }
-
+  
     setLoading(true);
     try {
       let userCredential;
@@ -43,17 +43,21 @@ function AuthScreen() {
         userCredential = await createUserWithEmailAndPassword(auth, email, password);
       }
       const token = await userCredential.user.getIdToken();
-
+  
       const postData = { firebase_token: token };
       if (!isLogin) {
         postData.firstName = firstName;
         postData.lastName = lastName;
       }
-
+  
       const endpoint = isLogin ? '/login/' : '/register/';
       const response = await axios.post(`${API_URL}${endpoint}`, postData);
+  
+      // 🔥 BURASI YENİ
+      localStorage.setItem('firebaseToken', token);
+  
       alert(response.data.message || 'İşlem başarılı.');
-      navigate('/profile');
+      navigate('/home');
     } catch (error) {
       console.error(error);
       alert('Hata: ' + error.message);
@@ -61,6 +65,7 @@ function AuthScreen() {
       setLoading(false);
     }
   };
+  
 
   return (
     <div style={styles.container}>

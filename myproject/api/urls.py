@@ -4,5 +4,5 @@ from . import views
 urlpatterns = [
     path('register/', views.register_user, name='register'),
     path('login/', views.login_user, name='login'),
-    # ileride daha fazla endpoint ekleyeceğiz
+    path('profile/', views.get_profile, name='profile'),
 ]

@@ -1,4 +1,3 @@
-// C:\Users\Mustafa\Github\GitHub\KiralamaPazari\MyMobileApp\AuthScreen.js
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { auth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from './firebase';
@@ -6,20 +5,18 @@ import axios from 'axios';
 import { useRouter } from 'expo-router';
 
 export default function AuthScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [isLogin, setIsLogin] = useState(true); // true: giriş, false: kayıt
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [firstName, setFirstName] = useState<string>('');
+  const [lastName, setLastName] = useState<string>('');
+  const [isLogin, setIsLogin] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
 
-  const router = useRouter(); // Yönlendirme için router
+  const router = useRouter();
 
-  // Gerçek cihaz kullanıyorsanız API_URL'i bilgisayarınızın LAN IP adresine göre ayarlayın.
-  // Örneğin: 'http://192.168.1.100:8000/api'
-  const API_URL = 'http://10.14.2.45:8000/api';
+  const API_URL = 'http://10.14.2.133:8000/api';
 
-  const handleAuth = async () => {
+  const handleAuth = async (): Promise<void> => {
     if (!email || !email.includes('@')) {
       Alert.alert('Geçersiz Email', 'Lütfen geçerli bir email adresi girin.');
       return;
@@ -32,7 +29,7 @@ export default function AuthScreen() {
       Alert.alert('Eksik Bilgi', 'Lütfen adınızı ve soyadınızı girin.');
       return;
     }
-
+  
     setLoading(true);
     try {
       let userCredential;
@@ -40,32 +37,39 @@ export default function AuthScreen() {
         userCredential = await signInWithEmailAndPassword(auth, email, password);
       } else {
         userCredential = await createUserWithEmailAndPassword(auth, email, password);
+  
+        // Sadece kayıt aşamasında, kayıt olduktan sonra backend'e register isteği gönder!
+        const token = await userCredential.user.getIdToken();  // Dikkat: true demiyoruz artık
+  
+        const postData = {
+          firebase_token: token,
+          firstName: firstName,
+          lastName: lastName
+        };
+  
+        await axios.post(`${API_URL}/register/`, postData);
       }
-      const token = await userCredential.user.getIdToken();
-
-      const postData = { firebase_token: token };
-      if (!isLogin) {
-        postData.firstName = firstName;
-        postData.lastName = lastName;
-      }
-
-      const endpoint = isLogin ? '/login/' : '/register/';
-      const response = await axios.post(`${API_URL}${endpoint}`, postData);
-
-      // İşlem başarılıysa, profil sayfasına yönlendiriyoruz
+  
+      // Giriş yaptıktan sonra (veya yeni kayıt sonrası) profile git
       router.push('/profile');
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Hata', error.message);
+    } catch (error: any) {
+      if (error.response) {
+        console.error('Hata:', error.response.data);
+        Alert.alert('Hata', JSON.stringify(error.response.data));
+      } else {
+        console.error('Hata:', error.message);
+        Alert.alert('Hata', error.message);
+      }
     } finally {
       setLoading(false);
     }
   };
+  
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{isLogin ? 'Giriş Yap' : 'Kayıt Ol'}</Text>
-      
+
       {!isLogin && (
         <>
           <TextInput
@@ -122,44 +126,10 @@ export default function AuthScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    paddingHorizontal: 20,
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 24,
-    textAlign: 'center',
-    color: '#333',
-  },
-  input: {
-    height: 50,
-    borderColor: '#999',
-    borderWidth: 1,
-    borderRadius: 8,
-    marginBottom: 12,
-    paddingHorizontal: 12,
-    fontSize: 16,
-    color: '#333',
-  },
-  button: {
-    backgroundColor: '#007bff',
-    paddingVertical: 14,
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  buttonText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  toggleText: {
-    textAlign: 'center',
-    color: '#007bff',
-    fontSize: 16,
-  },
+  container: { flex: 1, backgroundColor: '#fff', paddingHorizontal: 20, justifyContent: 'center' },
+  title: { fontSize: 32, fontWeight: 'bold', marginBottom: 24, textAlign: 'center', color: '#333' },
+  input: { height: 50, borderColor: '#999', borderWidth: 1, borderRadius: 8, marginBottom: 12, paddingHorizontal: 12, fontSize: 16, color: '#333' },
+  button: { backgroundColor: '#007bff', paddingVertical: 14, borderRadius: 8, marginBottom: 12 },
+  buttonText: { color: '#fff', textAlign: 'center', fontSize: 18, fontWeight: '600' },
+  toggleText: { textAlign: 'center', color: '#007bff', fontSize: 16 },
 });

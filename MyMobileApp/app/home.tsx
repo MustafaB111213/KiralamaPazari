@@ -1,90 +1,85 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { collection, addDoc, onSnapshot, updateDoc, doc } from 'firebase/firestore';
-import { db } from './firebase';
+import React from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
+import { useRouter } from 'expo-router';
 
-const HomeScreen = () => {
-  const [posts, setPosts] = useState<any[]>([]);
-  const [newComment, setNewComment] = useState('');
-  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+const mockProducts = [
+  {
+    id: '1',
+    title: 'Dağ Bisikleti',
+    pricePerDay: 150,
+    image: 'https://images.unsplash.com/photo-1595433707802-1639266e4e27?auto=format&fit=crop&w=800&q=60',
+  },
+  {
+    id: '2',
+    title: 'Profesyonel Kamera',
+    pricePerDay: 250,
+    image: 'https://images.unsplash.com/photo-1519183071298-a2962be96c71?auto=format&fit=crop&w=800&q=60',
+  },
+  {
+    id: '3',
+    title: 'Kamp Çadırı',
+    pricePerDay: 100,
+    image: 'https://images.unsplash.com/photo-1519455953755-af066f52f1d7?auto=format&fit=crop&w=800&q=60',
+  },
+];
 
-  useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, 'posts'), (snapshot) => {
-      const fetchedPosts = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      setPosts(fetchedPosts);
-    });
+export default function Home() {
+  const router = useRouter();
 
-    return () => unsubscribe();
-  }, []);
-
-  const handleAddComment = async () => {
-    if (!newComment || !selectedPostId) return;
-
-    const postRef = doc(db, 'posts', selectedPostId);
-    const post = posts.find((p) => p.id === selectedPostId);
-
-    const updatedComments = [...(post.comments || []), newComment];
-    await updateDoc(postRef, { comments: updatedComments });
-
-    setNewComment('');
-    setSelectedPostId(null);
+  const goToProfile = () => {
+    router.push('/profile');
   };
 
-  const handleLike = async (postId: string) => {
-    const postRef = doc(db, 'posts', postId);
-    const post = posts.find((p) => p.id === postId);
-    await updateDoc(postRef, { likes: (post.likes || 0) + 1 });
-  };
-
-  const renderItem = ({ item }: any) => (
-    <View style={styles.post}>
-      <Text style={styles.text}>📝 {item.title || 'Post Başlığı'}</Text>
-      <Text style={styles.text}>❤️ {item.likes || 0} Beğeni</Text>
-      <FlatList
-        data={item.comments || []}
-        keyExtractor={(_, i) => i.toString()}
-        renderItem={({ item }) => <Text style={styles.comment}>💬 {item}</Text>}
-      />
-      <TouchableOpacity onPress={() => handleLike(item.id)} style={styles.likeButton}>
-        <Text>👍 Beğen</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => setSelectedPostId(item.id)} style={styles.commentButton}>
-        <Text>💬 Yorum Yap</Text>
-      </TouchableOpacity>
+  const renderItem = ({ item }: { item: typeof mockProducts[0] }) => (
+    <View style={styles.card}>
+      <Image source={{ uri: item.image }} style={styles.image} />
+      <Text style={styles.title}>{item.title}</Text>
+      <Text style={styles.price}>{item.pricePerDay} ₺ / gün</Text>
     </View>
   );
 
   return (
     <View style={styles.container}>
-      <FlatList data={posts} keyExtractor={(item) => item.id} renderItem={renderItem} />
-
-      {selectedPostId && (
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Yorum yaz..."
-            value={newComment}
-            onChangeText={setNewComment}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={goToProfile}>
+          <Image
+            source={require('../assets/default_profile.png')}
+            style={styles.profileIcon}
           />
-          <TouchableOpacity onPress={handleAddComment} style={styles.sendButton}>
-            <Text>Gönder</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+        </TouchableOpacity>
+      </View>
+
+      <FlatList
+        data={mockProducts}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        contentContainerStyle={{ paddingBottom: 20 }}
+      />
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
-  post: { marginBottom: 20, borderBottomWidth: 1, paddingBottom: 10 },
-  text: { fontSize: 16 },
-  comment: { marginLeft: 10, color: '#555' },
-  likeButton: { marginTop: 5 },
-  commentButton: { marginTop: 5 },
-  inputContainer: { flexDirection: 'row', marginTop: 10 },
-  input: { flex: 1, borderWidth: 1, borderColor: '#ccc', borderRadius: 4, padding: 8 },
-  sendButton: { marginLeft: 8, justifyContent: 'center' },
+  container: { flex: 1, backgroundColor: '#fff' },
+  header: {
+    width: '100%',
+    padding: 20,
+    alignItems: 'flex-end',
+    backgroundColor: '#f2f2f2',
+  },
+  profileIcon: { width: 40, height: 40, borderRadius: 20 },
+  card: {
+    backgroundColor: '#fff',
+    margin: 10,
+    borderRadius: 10,
+    overflow: 'hidden',
+    elevation: 3, // Android için gölge
+    shadowColor: '#000', // iOS için gölge
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+  },
+  image: { width: '100%', height: 150 },
+  title: { fontSize: 18, fontWeight: 'bold', margin: 10 },
+  price: { fontSize: 16, color: '#666', marginHorizontal: 10, marginBottom: 10 },
 });
-
-export default HomeScreen;

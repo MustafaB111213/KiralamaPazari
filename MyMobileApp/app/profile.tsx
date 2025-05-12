@@ -1,97 +1,96 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Button, ActivityIndicator, Image } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Button,
+  ActivityIndicator,
+  Image,
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import { auth } from '../firebase';
+import { auth } from '../../firebase';
 import axios from 'axios';
+import defaultProfile from '../../assets/default_profile.png';
 
 export default function Profile() {
   const router = useRouter();
-  const [profile, setProfile] = useState<{ firstName: string; lastName: string; email: string } | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-
-  const API_URL = 'http://10.14.2.133:8000/api'; 
+  const [profile, setProfile] = useState<{
+    firstName: string;
+    lastName: string;
+    email: string;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const API_URL = 'http://10.14.10.6:8000/api';
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    (async () => {
       try {
         const token = await auth.currentUser?.getIdToken();
-        if (!token) throw new Error('Kullanıcı oturum açmamış');
-    
-        const response = await axios.get(`${API_URL}/profile/`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
+        if (!token) throw new Error('Oturum açılmamış');
+        const res = await axios.get(`${API_URL}/profile/`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
-    
-        setProfile(response.data);
-      } catch (error: any) {
-        if (error.response) {
-          console.error('Profil çekme hatası:', error.response.data);
-        } else {
-          console.error('Profil çekme hatası:', error.message);
-        }
+        setProfile(res.data);
+      } catch (e) {
+        console.error(e);
       } finally {
         setLoading(false);
       }
-    };
-    fetchProfile();
+    })();
   }, []);
 
-  const handleLogout = async () => {
+  const logout = async () => {
     await auth.signOut();
-    router.push('/');
+    router.push('/auth');
   };
 
   if (loading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#0000ff" />
-      </View>
-    );
+    return <ActivityIndicator style={styles.loader} size="large" />;
   }
 
   if (!profile) {
     return (
       <View style={styles.container}>
         <Text>Profil bilgisi alınamadı.</Text>
-        <Button title="Çıkış Yap" onPress={handleLogout} />
+        <Button title="Çıkış Yap" onPress={logout} />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <Image
-        source={require('../assets/default_profile.png')}
-        style={styles.profileImage}
-      />
-      <Text style={styles.name}>{profile.firstName} {profile.lastName}</Text>
+      <Image source={defaultProfile} style={styles.image} />
+      <Text style={styles.name}>
+        {profile.firstName} {profile.lastName}
+      </Text>
       <Text style={styles.email}>{profile.email}</Text>
-
-      <View style={styles.statsContainer}>
+      <View style={styles.stats}>
         <View style={styles.statItem}>
           <Text style={styles.statNumber}>5</Text>
-          <Text style={styles.statLabel}>Kiralanan Ürün</Text>
+          <Text>Kiralama</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statNumber}>⭐ 4.5</Text>
-          <Text style={styles.statLabel}>Ortalama Puan</Text>
+          <Text style={styles.statNumber}>4.5</Text>
+          <Text>Ortalama Puan</Text>
         </View>
       </View>
-
-      <Button title="Çıkış Yap" onPress={handleLogout} />
+      <Button title="Çıkış Yap" onPress={logout} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', padding: 20, alignItems: 'center', justifyContent: 'center' },
-  profileImage: { width: 120, height: 120, borderRadius: 60, marginBottom: 20 },
-  name: { fontSize: 24, fontWeight: 'bold', marginBottom: 8 },
-  email: { fontSize: 16, color: '#666', marginBottom: 20 },
-  statsContainer: { flexDirection: 'row', justifyContent: 'space-around', width: '100%', marginBottom: 20 },
+  loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    padding: 24,
+    backgroundColor: '#fff',
+  },
+  image: { width: 120, height: 120, borderRadius: 60, marginBottom: 16 },
+  name: { fontSize: 22, fontWeight: 'bold', marginBottom: 4 },
+  email: { fontSize: 16, color: '#666', marginBottom: 24 },
+  stats: { flexDirection: 'row', width: '100%', justifyContent: 'space-around' },
   statItem: { alignItems: 'center' },
-  statNumber: { fontSize: 20, fontWeight: 'bold' },
-  statLabel: { fontSize: 14, color: '#666' },
+  statNumber: { fontSize: 20, fontWeight: '600' },
 });

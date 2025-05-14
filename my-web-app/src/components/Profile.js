@@ -9,7 +9,7 @@ function Profile() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const API_URL = 'http://10.14.2.133:8000/api'; // IP'yi kendi backend IP'ine göre ayarla
+  const API_URL = 'http://10.14.2.28:8000/api'; // IP'yi kendi backend IP'ine göre ayarla
 
   useEffect(() => {
     const fetchProfile = async () => {

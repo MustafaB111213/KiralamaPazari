@@ -1,5 +1,6 @@
 {
   "expo": {
+    "sdkVersion": "53.0.0",
     "name": "MyMobileApp",
     "slug": "MyMobileApp",
     "version": "1.0.0",
@@ -35,7 +36,7 @@
       ]
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": false
     }
   }
 }

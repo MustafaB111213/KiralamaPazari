@@ -2,10 +2,21 @@ import firebase_admin
 from firebase_admin import auth, credentials
 from django.http import JsonResponse
 from django.contrib.auth.models import User
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework import status
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.permissions import AllowAny
+from django.shortcuts import get_object_or_404
+from .models import Item  # Veya Product modeli
+from rest_framework.response import Response
+from .serializers import ItemSerializer  # ← buraya geldi
+from rest_framework.parsers import MultiPartParser, FormParser
+
+@api_view(['GET'])
+def list_products(request):
+    items = Item.objects.all().order_by('-id')
+    serializer = ItemSerializer(items, many=True)
+    return Response(serializer.data)
 
 # Firebase Admin başlatma (bir kez)
 # google-service-account.json dosyası yolunu ayarla
@@ -121,3 +132,33 @@ def get_profile(request):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
+    
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_product_detail(request, product_id):
+    product = get_object_or_404(Item, id=product_id)
+    serializer = ItemSerializer(product)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+@parser_classes([MultiPartParser, FormParser])
+def create_product(request):
+    firebase_token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    owner = None
+
+    if firebase_token:
+        try:
+            decoded_token = auth.verify_id_token(firebase_token)
+            uid = decoded_token['uid']
+            owner = User.objects.filter(username=uid).first()
+        except Exception as e:
+            print("Auth error:", e)
+
+    data = request.data.copy()
+    serializer = ItemSerializer(data=data)
+    if serializer.is_valid():
+        item = Item(**serializer.validated_data)
+        item.owner = owner
+        item.save()
+        return Response({'message': 'Ürün başarıyla eklendi.', 'data': ItemSerializer(item).data})
+    return Response(serializer.errors, status=400)

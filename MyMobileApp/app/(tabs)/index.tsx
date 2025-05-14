@@ -1,8 +1,4 @@
-// C:\Users\Mustafa\Github\GitHub\KiralamaPazari\MyMobileApp\app\index.tsx
+// app/(tabs)/index.tsx
 import React from 'react';
-// AuthScreen.js dosyanız, proje kökünde olduğu için bir üst dizinden import ediliyor:
-import AuthScreen from '../../AuthScreen';
-
-export default function Index() {
-  return <AuthScreen />;
-}
+import Home from '../home';           // kök altındaki home.tsx’ini al
+export default Home;                 // ve tab’ın default ekranı yap

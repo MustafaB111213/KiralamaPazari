@@ -27,7 +27,7 @@ function MainLayout() {
       <Routes>
         <Route path="/" element={<AuthScreen />} />
         <Route path="/home" element={<Home />} />
-        <Route path="/home/kategori/:categoryName" element={<Home />} />
+        <Route path="/kategori/:categoryName" element={<Home />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/products/:id" element={<ProductDetail />} />
         <Route path="/add-product" element={<AddProduct />} />

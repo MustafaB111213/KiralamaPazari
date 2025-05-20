@@ -51,7 +51,7 @@ function Navbar() {
           <button
             key={cat}
             className="category-button"
-            onClick={() => navigate(`/home/kategori/${encodeURIComponent(cat)}`)}
+            onClick={() => navigate(`/kategori/${encodeURIComponent(cat)}`)}
           >
             {cat}
           </button>

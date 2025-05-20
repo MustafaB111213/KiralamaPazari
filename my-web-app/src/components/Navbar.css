@@ -1,0 +1,94 @@
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #ffffff;
+  padding: 15px 30px;
+  border-bottom: 1px solid #ddd;
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.navbar-logo {
+  display: flex;
+  align-items: center;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  text-decoration: none;
+}
+
+.logo-icon {
+  font-size: 28px;
+  margin-right: 10px;
+  color: #ff6600;
+}
+
+.logo-text {
+  font-size: 22px;
+  color: #222;
+  line-height: 1.1;
+  font-weight: bold;
+}
+
+.navbar-search {
+  padding: 8px 12px;
+  font-size: 16px;
+  width: 300px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+}
+
+.navbar-search:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.nav-icon {
+  font-size: 22px;
+  color: #333;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.nav-icon:hover {
+  color: #007bff;
+}
+
+.navbar-categories {
+  display: flex;
+  gap: 10px;
+  padding: 8px 20px;
+  background-color: #f9f9f9;
+  overflow-x: auto;
+  border-bottom: 1px solid #ddd;
+}
+
+.category-button {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  font-size: 14px;
+  border: none;
+  border-radius: 20px;
+  background-color: #e9ecef;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.2s;
+}
+
+.category-button:hover {
+  background-color: #dee2e6;
+}

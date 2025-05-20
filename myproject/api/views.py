@@ -1,3 +1,4 @@
+from django.db.models import Q
 import firebase_admin
 from firebase_admin import auth, credentials
 from django.http import JsonResponse
@@ -7,132 +8,43 @@ from rest_framework import status
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.permissions import AllowAny
 from django.shortcuts import get_object_or_404
-from .models import Item  # Veya Product modeli
 from rest_framework.response import Response
-from .serializers import ItemSerializer  # ← buraya geldi
 from rest_framework.parsers import MultiPartParser, FormParser
 
-@api_view(['GET'])
-def list_products(request):
-    items = Item.objects.all().order_by('-id')
-    serializer = ItemSerializer(items, many=True)
-    return Response(serializer.data)
+from .models import Item
+from .serializers import ItemSerializer
 
-# Firebase Admin başlatma (bir kez)
-# google-service-account.json dosyası yolunu ayarla
+# Firebase Admin tek seferlik başlatma
 cred = credentials.Certificate("google-service-account.json")
 firebase_admin.initialize_app(cred)
 
-@api_view(['POST'])
-def register_user(request):
-    """
-    Beklenen POST verisi:
-    {
-      "firebase_token": "xyz123",
-      "firstName": "Mustafa",
-      "lastName": "Yılmaz"
-    }
-    """
-    firebase_token = request.data.get('firebase_token')
-    first_name = request.data.get('firstName')
-    last_name = request.data.get('lastName')
-
-    if not firebase_token:
-        return JsonResponse({"error": "Token yok"}, status=status.HTTP_400_BAD_REQUEST)
-
-    try:
-        decoded_token = auth.verify_id_token(firebase_token)
-        uid = decoded_token['uid']
-        email = decoded_token.get('email', '')
-
-        user, created = User.objects.get_or_create(username=uid, defaults={
-            "email": email,
-            "first_name": first_name,
-            "last_name": last_name,
-        })
-
-        if created:
-            return JsonResponse({"message": "Kayıt başarılı", "uid": uid}, status=200)
-        else:
-            return JsonResponse({"message": "Kullanıcı zaten var", "uid": uid}, status=200)
-
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=400)
-
-@csrf_exempt
-@api_view(['POST'])
-def login_user(request):
-    """
-    Beklenen POST verisi:
-    {
-      "firebase_token": "xyz123"
-    }
-    Cevap JSON:
-    {
-      "message": "Giriş başarılı",
-      "uid": "wznigd...",
-      "firstName": "Mustafa",
-      "lastName": "Yılmaz",
-      "email": "moss@gmail.com"
-    }
-    """
-    firebase_token = request.data.get('firebase_token')
-    if not firebase_token:
-        return JsonResponse({"error": "Token yok"}, status=400)
-
-    try:
-        decoded_token = auth.verify_id_token(firebase_token)
-        uid = decoded_token['uid']
-        email = decoded_token.get('email', '')
-
-        user = User.objects.filter(username=uid).first()
-        if not user:
-            return JsonResponse({"error": "Kullanıcı bulunamadı"}, status=404)
-
-        # Burada şablon amaçlı döneceğimiz veri
-        return JsonResponse({
-            "message": "Giriş başarılı",
-            "uid": uid,
-            "firstName": user.first_name or "",
-            "lastName": user.last_name or "",
-            "email": user.email or email,
-        }, status=200)
-
-    except auth.InvalidIdTokenError:
-        return JsonResponse({"error": "Geçersiz Firebase token"}, status=400)
-    except auth.ExpiredIdTokenError:
-        return JsonResponse({"error": "Süresi geçmiş Firebase token"}, status=401)
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=400)
-
-
-@csrf_exempt
 @api_view(['GET'])
-@permission_classes([AllowAny])
-def get_profile(request):
-    auth_header = request.headers.get('Authorization')
-    if not auth_header or not auth_header.startswith('Bearer '):
-        return JsonResponse({"error": "Token eksik"}, status=400)
+def list_products(request):
+    search_query    = request.GET.get('search', '')
+    category_filter = request.GET.get('category', '')
+    items = Item.objects.all()
+    if search_query:
+        items = items.filter(
+            Q(title__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(category__icontains=search_query)
+        )
+    if category_filter:
+        items = items.filter(category__iexact=category_filter)
+    items = items.order_by('-id')
+    serializer = ItemSerializer(items, many=True)
+    return Response(serializer.data)
 
-    firebase_token = auth_header.split(' ')[1]
+@api_view(['GET'])
+def list_categories(request):
+    cats = (
+        Item.objects
+        .values_list('category', flat=True)
+        .distinct()
+        .order_by('category')
+    )
+    return Response(cats)
 
-    try:
-        decoded_token = auth.verify_id_token(firebase_token)
-        uid = decoded_token['uid']
-
-        user = User.objects.filter(username=uid).first()
-        if user:
-            return JsonResponse({
-                "firstName": user.first_name,
-                "lastName": user.last_name,
-                "email": user.email,
-            }, status=200)
-        else:
-            return JsonResponse({"error": "Kullanıcı bulunamadı"}, status=404)
-
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=400)
-    
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def get_product_detail(request, product_id):
@@ -145,20 +57,86 @@ def get_product_detail(request, product_id):
 def create_product(request):
     firebase_token = request.headers.get("Authorization", "").replace("Bearer ", "")
     owner = None
-
     if firebase_token:
         try:
             decoded_token = auth.verify_id_token(firebase_token)
             uid = decoded_token['uid']
             owner = User.objects.filter(username=uid).first()
-        except Exception as e:
-            print("Auth error:", e)
-
-    data = request.data.copy()
-    serializer = ItemSerializer(data=data)
+        except Exception:
+            pass
+    serializer = ItemSerializer(data=request.data)
     if serializer.is_valid():
-        item = Item(**serializer.validated_data)
-        item.owner = owner
-        item.save()
-        return Response({'message': 'Ürün başarıyla eklendi.', 'data': ItemSerializer(item).data})
+        serializer.save(owner=owner)
+        return Response({'message': 'Ürün başarıyla eklendi.', 'data': serializer.data})
     return Response(serializer.errors, status=400)
+
+@csrf_exempt
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_profile(request):
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return JsonResponse({"error": "Token eksik"}, status=400)
+    token = auth_header.split(' ')[1]
+    try:
+        decoded = auth.verify_id_token(token)
+        user = User.objects.filter(username=decoded['uid']).first()
+        if not user:
+            return JsonResponse({"error": "Kullanıcı bulunamadı"}, status=404)
+        items = Item.objects.filter(owner=user).order_by('-id')
+        return JsonResponse({
+            "firstName": user.first_name,
+            "lastName":  user.last_name,
+            "email":     user.email,
+            "items":     ItemSerializer(items, many=True).data
+        }, status=200)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)
+
+@csrf_exempt
+@api_view(['POST'])
+def register_user(request):
+    firebase_token = request.data.get('firebase_token')
+    first_name    = request.data.get('firstName')
+    last_name     = request.data.get('lastName')
+    if not firebase_token:
+        return JsonResponse({"error": "Token yok"}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        decoded = auth.verify_id_token(firebase_token)
+        user, created = User.objects.get_or_create(
+            username=decoded['uid'],
+            defaults={
+                "email":       decoded.get('email', ''),
+                "first_name":  first_name,
+                "last_name":   last_name
+            }
+        )
+        msg = "Kayıt başarılı" if created else "Kullanıcı zaten var"
+        return JsonResponse({"message": msg, "uid": user.username}, status=200)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)
+
+@csrf_exempt
+@api_view(['POST'])
+def login_user(request):
+    firebase_token = request.data.get('firebase_token')
+    if not firebase_token:
+        return JsonResponse({"error": "Token yok"}, status=400)
+    try:
+        decoded = auth.verify_id_token(firebase_token)
+        user = User.objects.filter(username=decoded['uid']).first()
+        if not user:
+            return JsonResponse({"error": "Kullanıcı bulunamadı"}, status=404)
+        return JsonResponse({
+            "message": "Giriş başarılı",
+            "uid":     user.username,
+            "firstName": user.first_name,
+            "lastName":  user.last_name,
+            "email":     user.email or decoded.get('email', '')
+        }, status=200)
+    except auth.InvalidIdTokenError:
+        return JsonResponse({"error": "Geçersiz Firebase token"}, status=400)
+    except auth.ExpiredIdTokenError:
+        return JsonResponse({"error": "Süresi geçmiş Firebase token"}, status=401)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)

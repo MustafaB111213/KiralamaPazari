@@ -8,6 +8,7 @@ import Home from './components/Home';
 import ProductDetail from './components/ProductDetail';
 import AddProduct from './components/AddProduct';
 import '@fortawesome/fontawesome-free/css/all.min.css';
+import Favorites from './components/Favorites';
 
 function App() {
   return (
@@ -31,6 +32,8 @@ function MainLayout() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/products/:id" element={<ProductDetail />} />
         <Route path="/add-product" element={<AddProduct />} />
+        <Route path="/favorilerim" element={<Favorites />} />
+
       </Routes>
     </>
   );

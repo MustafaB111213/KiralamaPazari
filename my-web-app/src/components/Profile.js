@@ -9,7 +9,7 @@ function Profile() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const API_URL = 'http://192.168.1.35:8000/api'; // Sunucu IP/port burada kalmalı
+  const API_URL = 'http://192.168.1.47:8000/api'; // Sunucu IP/port burada kalmalı
 
   useEffect(() => {
     const fetchProfile = async () => {

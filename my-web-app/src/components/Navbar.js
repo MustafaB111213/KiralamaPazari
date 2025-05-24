@@ -34,7 +34,9 @@ function Navbar() {
         </div>
 
         <div className="navbar-right">
-          <i className="fas fa-shopping-cart nav-icon" title="Sepet"></i>
+          <Link to="/favorilerim" title="Favorilerim">
+            <i className="fas fa-heart nav-icon"></i>
+          </Link>
           <i className="fas fa-envelope nav-icon" title="Mesajlar"></i>
           <i className="fas fa-bell nav-icon" title="Bildirimler"></i>
           <Link to="/profile" title="Profil">

@@ -12,3 +12,13 @@ class Item(models.Model):
 
     def __str__(self):
         return self.title
+
+class Favorite(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('user', 'item')
+
+    def __str__(self):
+        return f"{self.user.username} favorited {self.item.title}"

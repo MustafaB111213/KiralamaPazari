@@ -9,4 +9,8 @@ urlpatterns = [
     path('products/create/', views.create_product, name='product-create'),
     path('products/<int:product_id>/', views.get_product_detail, name='product-detail'),
     path('categories/', views.list_categories, name='category-list'),
+
+    path('favorites/toggle/', views.toggle_favorite),
+    path('favorites/', views.get_favorites),
+
 ]

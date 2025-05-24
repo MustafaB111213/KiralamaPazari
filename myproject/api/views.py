@@ -1,18 +1,20 @@
 from django.db.models import Q
 import firebase_admin
+from firebase_admin import auth as firebase_auth
 from firebase_admin import auth, credentials
 from django.http import JsonResponse
 from django.contrib.auth.models import User
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework import status
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 
 from .models import Item
 from .serializers import ItemSerializer
+from .models import Favorite
 
 # Firebase Admin tek seferlik başlatma
 cred = credentials.Certificate("google-service-account.json")
@@ -140,3 +142,43 @@ def login_user(request):
         return JsonResponse({"error": "Süresi geçmiş Firebase token"}, status=401)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
+
+@api_view(['POST'])
+def toggle_favorite(request):
+    user = get_user_from_request(request)
+    if not user:
+        return Response({'error': 'Unauthorized'}, status=403)
+
+    item_id = request.data.get('item_id')
+    item = get_object_or_404(Item, id=item_id)
+
+    favorite, created = Favorite.objects.get_or_create(user=user, item=item)
+    if not created:
+        favorite.delete()
+        return Response({'status': 'removed'})
+    return Response({'status': 'added'})
+
+@api_view(['GET'])
+def get_favorites(request):
+    user = get_user_from_request(request)
+    if not user:
+        return Response({'error': 'Unauthorized'}, status=403)
+
+    favorites = Favorite.objects.filter(user=user).select_related('item')
+    items = [f.item for f in favorites]
+    serialized = ItemSerializer(items, many=True)
+    return Response(serialized.data)
+
+
+def get_user_from_request(request):
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return None
+    token = auth_header.replace("Bearer ", "")
+    try:
+        decoded = firebase_auth.verify_id_token(token)
+        uid = decoded.get("uid")
+        return User.objects.get(username=uid)
+    except Exception as e:
+        print("Firebase token error:", str(e))
+        return None

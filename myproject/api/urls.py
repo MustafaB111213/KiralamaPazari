@@ -13,4 +13,11 @@ urlpatterns = [
     path('favorites/toggle/', views.toggle_favorite),
     path('favorites/', views.get_favorites),
 
+    path('cart/toggle/', views.toggle_cart),
+
+    path('products/<int:product_id>/comments/', views.product_comments),
+
+    path('products/<int:product_id>/similar/', views.similar_products),
+
+    
 ]

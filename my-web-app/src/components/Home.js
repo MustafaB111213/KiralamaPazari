@@ -13,19 +13,22 @@ function Home() {
 
   const API_URL = 'http://localhost:8000/api';
 
-  const fetchProducts = async (search = '', category = '') => {
-    setLoading(true);
-    try {
-      const response = await axios.get(`${API_URL}/products/`, {
-        params: { search, category },
-      });
-      setProducts(response.data);
-    } catch (error) {
-      console.error('Ürünleri çekerken hata:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const fetchProducts = async (search = '', category = null) => {
+  setLoading(true);
+  try {
+    const params = {};
+    if (search) params.search = search;
+    if (category) params.category = category;
+
+    const response = await axios.get(`${API_URL}/products/`, { params });
+    setProducts(response.data);
+  } catch (error) {
+    console.error('Ürünleri çekerken hata:', error);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const fetchFavorites = async () => {
     const token = localStorage.getItem('firebaseToken');
@@ -103,26 +106,19 @@ function Home() {
                     onClick={() => toggleFavorite(product.id)}
                   ></i>
                 </div>
-                <Link
-                  to={`/products/${product.id}`}
-                  style={{ textDecoration: 'none', color: 'inherit' }}
-                >
+                <Link to={`/products/${product.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                   <img
-                    src={
-                      product.image
-                        ? `http://localhost:8000${product.image}`
-                        : '/placeholder.png'
-                    }
+                    src={product.image ? `http://localhost:8000${product.image}` : '/placeholder.png'}
                     alt={product.title}
                     className="product-image"
                   />
-                  <h3>{product.title}</h3>
-                  <p>{product.price_per_day} ₺ / gün</p>
-                  <p style={{ fontSize: '14px', color: '#555' }}>{product.owner_name}</p>
-                  <p style={{ fontSize: '14px', color: '#777' }}>{product.category}</p>
-                  <p style={{ fontSize: '13px', color: '#999' }}>
-                    {new Date(product.created_at).toLocaleDateString()}
-                  </p>
+                  <div className="product-info-box">
+                    <h3>{product.title}</h3>
+                    <p className="price">{product.price_per_day} ₺ / gün</p>
+                    <p>{product.owner_name}</p>
+                    <p>{product.category}</p>
+                    <p className="date">{new Date(product.created_at).toLocaleDateString()}</p>
+                  </div>
                 </Link>
               </div>
             );

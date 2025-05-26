@@ -12,9 +12,14 @@ from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 
-from .models import Item
+from .models import CartItem, Item
 from .serializers import ItemSerializer
 from .models import Favorite
+
+from .models import Comment
+from .serializers import CommentSerializer
+
+from difflib import SequenceMatcher
 
 # Firebase Admin tek seferlik başlatma
 cred = credentials.Certificate("google-service-account.json")
@@ -52,7 +57,30 @@ def list_categories(request):
 def get_product_detail(request, product_id):
     product = get_object_or_404(Item, id=product_id)
     serializer = ItemSerializer(product)
-    return Response(serializer.data)
+
+    # Benzer ürünleri bul
+    all_items = Item.objects.exclude(id=product_id)
+    similar_items = []
+
+    for item in all_items:
+        # Kategori ve başlık karşılaştırması
+        category_score = 1.0 if item.category == product.category else 0.0
+        title_score = SequenceMatcher(None, product.title.lower(), item.title.lower()).ratio()
+        combined_score = (category_score * 0.6) + (title_score * 0.4)
+
+        if combined_score > 0.4:  # eşik değeri
+            similar_items.append((combined_score, item))
+
+    # Skora göre sırala
+    similar_items.sort(key=lambda x: x[0], reverse=True)
+    top_similar = [x[1] for x in similar_items[:4]]  # ilk 4 benzer ürün
+
+    similar_serialized = ItemSerializer(top_similar, many=True)
+
+    return Response({
+        "product": serializer.data,
+        "similar_products": similar_serialized.data
+    })
 
 @api_view(['POST'])
 @parser_classes([MultiPartParser, FormParser])
@@ -182,3 +210,66 @@ def get_user_from_request(request):
     except Exception as e:
         print("Firebase token error:", str(e))
         return None
+    
+@api_view(['POST'])
+def toggle_cart(request):
+    user = get_user_from_request(request)
+    if not user:
+        return Response({'error': 'Unauthorized'}, status=403)
+
+    item_id = request.data.get('item_id')
+    item = get_object_or_404(Item, id=item_id)
+
+    cart_item, created = CartItem.objects.get_or_create(user=user, item=item)
+    if not created:
+        cart_item.delete()
+        return Response({'status': 'removed'})
+    return Response({'status': 'added'})
+
+
+
+@api_view(['GET', 'POST'])
+def product_comments(request, product_id):
+    if request.method == 'GET':
+        comments = Comment.objects.filter(item_id=product_id).order_by('-created_at')
+        return Response(CommentSerializer(comments, many=True).data)
+
+    if request.method == 'POST':
+        user = get_user_from_request(request)
+        if not user:
+            return Response({'error': 'Unauthorized'}, status=403)
+
+        text = request.data.get("text")
+        rating = request.data.get("rating")
+
+        if not text or not rating:
+            return Response({'error': 'Yorum veya puan eksik'}, status=400)
+
+        Comment.objects.create(
+            user=user,
+            item_id=product_id,
+            text=text,
+            rating=rating
+        )
+
+        return Response({'message': 'Yorum eklendi'}, status=201)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def similar_products(request, product_id):
+    try:
+        product = Item.objects.get(id=product_id)
+        similar = Item.objects.filter(category=product.category).exclude(id=product.id)[:6]
+        serializer = ItemSerializer(similar, many=True)
+        return Response(serializer.data)
+    except Item.DoesNotExist:
+        return Response({'error': 'Ürün bulunamadı'}, status=404)
+    
+    
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_product(request, product_id):
+    user = request.user
+    item = get_object_or_404(Item, id=product_id, owner=user)
+    item.delete()
+    return Response({'message': 'Ürün silindi'}, status=204)

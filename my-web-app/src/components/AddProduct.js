@@ -30,6 +30,7 @@ function AddProduct() {
   const [category, setCategory]       = useState(ALL_CATEGORIES[0]);
   const navigate = useNavigate();
   const token    = localStorage.getItem('firebaseToken');
+  const [returnPolicy, setReturnPolicy] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,6 +45,7 @@ function AddProduct() {
     formData.append('price_per_day', pricePerDay);
     formData.append('category', category);
     formData.append('image', image);
+    formData.append('return_policy', returnPolicy);
 
     try {
       await axios.post(
@@ -83,6 +85,13 @@ function AddProduct() {
           style={styles.textarea}
           required
         />
+        <textarea
+          placeholder="Kargo ve İade Politikası"
+          value={returnPolicy}
+          onChange={e => setReturnPolicy(e.target.value)}
+          style={styles.textarea}
+        />
+
         <input
           type="number"
           placeholder="Günlük Fiyat (₺)"

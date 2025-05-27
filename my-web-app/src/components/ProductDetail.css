@@ -79,6 +79,13 @@
   margin-top: 30px;
 }
 
+.product-description p,
+.product-description-line {
+  word-break: break-word;  /* kelimeyi gerektiğinde kırar */
+  overflow-wrap: break-word;
+}
+
+
 .product-description h3,
 .shipping-info h3 {
   margin-bottom: 10px;

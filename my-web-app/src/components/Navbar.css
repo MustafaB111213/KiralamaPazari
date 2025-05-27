@@ -92,3 +92,16 @@
 .category-button:hover {
   background-color: #dee2e6;
 }
+.nav-icon-wrapper {
+  position: relative;
+}
+
+.unread-dot {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  width: 10px;
+  height: 10px;
+  background-color: red;
+  border-radius: 50%;
+}

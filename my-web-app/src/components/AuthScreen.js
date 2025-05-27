@@ -1,11 +1,10 @@
-// src/components/AuthScreen.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { auth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from '../firebase';
+import { auth } from '../firebase';
 
 function AuthScreen() {
-  const [isLogin, setIsLogin] = useState(true); // true: Giriş, false: Kayıt
+  const [isLogin, setIsLogin] = useState(true);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -13,59 +12,70 @@ function AuthScreen() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Yerel geliştirme ortamında; Django sunucunuz aynı makinede çalışıyorsa genellikle "localhost" kullanılır.
-  // Fakat eğer LAN IP veya bilgisayarınızın IP'si gerekiyorsa, örneğin:
-  // const API_URL = 'http://192.168.1.100:8000/api';
   const API_URL = 'http://localhost:8000/api';
 
   const handleAuth = async (e) => {
     e.preventDefault();
-  
-    if (!email || !email.includes('@')) {
+
+    const cleanedEmail =
+      typeof email === 'string' ? email.trim() : '';
+    const cleanedPassword =
+      typeof password === 'string' ? password.trim() : '';
+
+    if (
+      Object.prototype.toString.call(cleanedEmail) !== '[object String]' ||
+      !cleanedEmail.includes('@')
+    ) {
       alert('Lütfen geçerli bir email adresi girin.');
       return;
     }
-    if (!password || password.length < 6) {
+
+    if (
+      Object.prototype.toString.call(cleanedPassword) !== '[object String]' ||
+      cleanedPassword.length < 6
+    ) {
       alert('Şifre en az 6 karakter olmalı.');
       return;
     }
+
     if (!isLogin && (!firstName || !lastName)) {
       alert('Lütfen adınızı ve soyadınızı girin.');
       return;
     }
-  
+
     setLoading(true);
+
     try {
       let userCredential;
       if (isLogin) {
-        userCredential = await signInWithEmailAndPassword(auth, email, password);
+        userCredential = await auth.signInWithEmailAndPassword(email, password);
+
       } else {
-        userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        userCredential = await auth.createUserWithEmailAndPassword(email, password);
+
       }
+
       const token = await userCredential.user.getIdToken();
-  
+
       const postData = { firebase_token: token };
       if (!isLogin) {
         postData.firstName = firstName;
         postData.lastName = lastName;
       }
-  
+
       const endpoint = isLogin ? '/login/' : '/register/';
       const response = await axios.post(`${API_URL}${endpoint}`, postData);
-  
-      // 🔥 BURASI YENİ
+
       localStorage.setItem('firebaseToken', token);
-  
       alert(response.data.message || 'İşlem başarılı.');
       navigate('/home');
     } catch (error) {
-      console.error(error);
-      alert('Hata: ' + error.message);
+      console.error('Firebase Auth Hatası:', error);
+      alert('Hata: ' + (error?.message || 'İşlem başarısız.'));
     } finally {
       setLoading(false);
     }
   };
-  
 
   return (
     <div style={styles.container}>
@@ -108,7 +118,9 @@ function AuthScreen() {
         </button>
       </form>
       <p style={styles.toggleText} onClick={() => setIsLogin(!isLogin)}>
-        {isLogin ? 'Hesabınız yok mu? Kayıt olun.' : 'Zaten hesabınız var mı? Giriş yapın.'}
+        {isLogin
+          ? 'Hesabınız yok mu? Kayıt olun.'
+          : 'Zaten hesabınız var mı? Giriş yapın.'}
       </p>
     </div>
   );

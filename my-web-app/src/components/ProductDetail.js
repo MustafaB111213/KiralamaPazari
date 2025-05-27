@@ -32,6 +32,8 @@ function ProductDetail() {
     }
   }, [id]);
 
+  
+
   useEffect(() => {
     const fetchProduct = async () => {
       try {
@@ -137,8 +139,7 @@ function ProductDetail() {
         <img src={`${MEDIA_BASE_URL}${product.image}`} alt={product.title} className="main-image" />
       </div>
 
-      {/* BENZER ÜRÜNLER ARTIK SOL BLOKTA */}
-      {similar.length > 0 && (
+      {Array.isArray(similar) && similar.length > 0 && (
         <div className="similar-products">
           <h3>Benzer Ürünler</h3>
           <div className="similar-list">

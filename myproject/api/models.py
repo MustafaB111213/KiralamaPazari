@@ -42,3 +42,18 @@ class Comment(models.Model):
 
     def __str__(self):
         return f"{self.user.username} -> {self.item.title} ({self.rating}★)"
+    
+class ChatRoom(models.Model):
+    item = models.ForeignKey(Item, on_delete=models.CASCADE)
+    buyer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='buyer_chats')
+    seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='seller_chats')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('item', 'buyer', 'seller')
+
+class Message(models.Model):
+    room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)

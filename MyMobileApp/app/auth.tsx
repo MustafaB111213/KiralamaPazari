@@ -14,7 +14,7 @@ export default function AuthScreen() {
 
   const router = useRouter();
 
-  const API_URL = 'http://192.168.1.47:8000/api';
+  const API_URL = 'http://192.168.1.36:8000/api';
 
   const handleAuth = async (): Promise<void> => {
     if (!email || !email.includes('@')) {

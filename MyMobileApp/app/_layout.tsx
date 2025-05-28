@@ -1,7 +1,20 @@
+import { Slot, useSegments } from 'expo-router';
 import React from 'react';
-import { Slot } from 'expo-router';
+import { View, StyleSheet } from 'react-native';
+import Navbar from '../components/Navbar';
 
 export default function RootLayout() {
-  // Tüm alt sayfalar burada render edilecek
-  return <Slot />;
+  const segments = useSegments();
+  const showNavbar = !segments.includes('auth');
+
+  return (
+    <View style={styles.container}>
+      <Slot />
+      {showNavbar && <Navbar />}
+    </View>
+  );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+});

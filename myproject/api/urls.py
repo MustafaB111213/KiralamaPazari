@@ -37,5 +37,5 @@ urlpatterns = [
     path('chat/<int:chat_id>/', views.get_messages),
     path('chat/<int:chat_id>/send/', views.send_message),
     path('chats/', views.user_chats),
-
+    
 ]

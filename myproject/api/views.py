@@ -29,17 +29,26 @@ firebase_admin.initialize_app(cred)
 
 @api_view(['GET'])
 def list_products(request):
-    search_query    = request.GET.get('search', '')
+    search_query = request.GET.get('search', '')
     category_filter = request.GET.get('category', '')
+
     items = Item.objects.all()
+
+    # 🔒 GİRİŞ YAPMIŞ KULLANICIYSA KENDİ ÜRÜNLERİNİ FİLTRELE
+    user = get_user_from_request(request)
+    if user:
+        items = items.exclude(owner=user)
+
     if search_query:
         items = items.filter(
             Q(title__icontains=search_query) |
             Q(description__icontains=search_query) |
             Q(category__icontains=search_query)
         )
+
     if category_filter:
         items = items.filter(category__iexact=category_filter)
+
     items = items.order_by('-id')
     serializer = ItemSerializer(items, many=True)
     return Response(serializer.data)
@@ -60,28 +69,30 @@ def get_product_detail(request, product_id):
     product = get_object_or_404(Item, id=product_id)
     serializer = ItemSerializer(product)
 
+    # 🔐 Giriş yapan kullanıcı ürünü ekleyen mi?
+    user = get_user_from_request(request)
+    is_owner = user == product.owner if user else False
+
     # Benzer ürünleri bul
     all_items = Item.objects.exclude(id=product_id)
     similar_items = []
 
     for item in all_items:
-        # Kategori ve başlık karşılaştırması
         category_score = 1.0 if item.category == product.category else 0.0
         title_score = SequenceMatcher(None, product.title.lower(), item.title.lower()).ratio()
         combined_score = (category_score * 0.6) + (title_score * 0.4)
 
-        if combined_score > 0.4:  # eşik değeri
+        if combined_score > 0.4:
             similar_items.append((combined_score, item))
 
-    # Skora göre sırala
     similar_items.sort(key=lambda x: x[0], reverse=True)
-    top_similar = [x[1] for x in similar_items[:4]]  # ilk 4 benzer ürün
-
+    top_similar = [x[1] for x in similar_items[:4]]
     similar_serialized = ItemSerializer(top_similar, many=True)
 
     return Response({
         "product": serializer.data,
-        "similar_products": similar_serialized.data
+        "similar_products": similar_serialized.data,
+        "is_owner": is_owner  # 👈 Yeni alan
     })
 
 @api_view(['POST'])
@@ -240,6 +251,10 @@ def toggle_cart(request):
 
     item_id = request.data.get('item_id')
     item = get_object_or_404(Item, id=item_id)
+
+    # 🔒 KENDİ ÜRÜNÜNÜ EKLEME KISITI
+    if item.owner == user:
+        return Response({'error': 'Kendi ürününüzü sepete ekleyemezsiniz'}, status=400)
 
     cart_item, created = CartItem.objects.get_or_create(user=user, item=item)
     if not created:

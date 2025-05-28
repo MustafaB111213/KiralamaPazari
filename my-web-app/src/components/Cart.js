@@ -39,25 +39,20 @@ function Cart() {
   };
 
   const handleCheckout = async (itemId) => {
-  const token = localStorage.getItem('firebaseToken');
-  try {
-    const res = await axios.post(`${API_URL}/start-chat/`, 
-  { item_id: itemId },
-  {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json'
+    const token = localStorage.getItem('firebaseToken');
+    try {
+      const res = await axios.post(`${API_URL}/start-chat/`, { item_id: itemId }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const chatId = res.data.chat_id;
+      navigate(`/sohbet/${chatId}`);
+    } catch (err) {
+      alert("Sohbet başlatılamadı.");
     }
-  }
-);
-
-    const chatId = res.data.chat_id;
-    navigate(`/sohbet/${chatId}`);
-  } catch (err) {
-    alert("Sohbet başlatılamadı.");
-  }
-};
-
+  };
 
   return (
     <div className="cart-container">
@@ -67,13 +62,27 @@ function Cart() {
       ) : (
         <div className="cart-grid">
           {items.map(item => (
-            <div className="cart-item" key={item.id}>
-              <button className="remove-icon" onClick={() => handleRemove(item.id)}>✖</button>
+            <div className="cart-item" key={item.id} onClick={() => navigate(`/products/${item.id}`)}>
+              <button
+                className="remove-icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRemove(item.id);
+                }}
+              >✖</button>
               <img src={`http://localhost:8000${item.image}`} alt={item.title} />
               <div className="info">
                 <h4>{item.title}</h4>
-                <p>{item.price_per_day} ₺ / gün</p>
-                <button className="checkout-btn" onClick={() => handleCheckout(item.id)}>
+                <p className="price">{item.price_per_day} ₺ / gün</p>
+                <p className="owner">👤 {item.owner_name || 'Bilinmiyor'}</p>
+                <p className="category">📦 {item.category || 'Kategori yok'}</p>
+                <button
+                  className="checkout-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCheckout(item.id);
+                  }}
+                >
                   Ürünü Kirala
                 </button>
               </div>

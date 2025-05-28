@@ -55,9 +55,16 @@ function ChatRoom() {
   };
 
   useEffect(() => {
+  fetchMessages();
+  fetchUserId();
+
+  const interval = setInterval(() => {
     fetchMessages();
-    fetchUserId();
-  }, [fetchMessages]);
+  }, 3000); // 3 saniyede bir mesajları yenile
+
+  return () => clearInterval(interval); // component unmount olunca temizle
+}, [fetchMessages]);
+
 
   return (
     <div className="chatroom-container">

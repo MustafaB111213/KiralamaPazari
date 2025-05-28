@@ -1,19 +1,29 @@
-// app/sohbet/[chat_id].tsx
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  FlatList,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+  TouchableWithoutFeedback,
+  SafeAreaView
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import axios from 'axios';
 import { auth } from '../../firebase';
 
-const API_URL = 'http://192.168.1.36:8000/api';
+const API_URL = 'http://192.168.145.203:8000/api';
 
 export default function ChatRoom() {
   const { chat_id } = useLocalSearchParams<{ chat_id: string }>();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(true);
+  const flatListRef = useRef<FlatList>(null);
 
   const fetchMessages = useCallback(async () => {
     const token = await auth.currentUser?.getIdToken();
@@ -31,6 +41,12 @@ export default function ChatRoom() {
 
   useEffect(() => {
     fetchMessages();
+
+    const interval = setInterval(() => {
+      fetchMessages();
+    }, 3000);
+
+    return () => clearInterval(interval);
   }, [fetchMessages]);
 
   const handleSend = async () => {
@@ -50,50 +66,67 @@ export default function ChatRoom() {
       );
       setInput('');
       fetchMessages();
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
     } catch (err) {
       console.error('Mesaj gönderilemedi:', err);
     }
   };
 
   const renderItem = ({ item }: any) => (
-    <View
-      style={[
-        styles.message,
-        item.is_self ? styles.self : styles.other,
-      ]}
-    >
+    <View style={[styles.message, item.is_self ? styles.self : styles.other]}>
       <Text style={styles.sender}>{item.sender}</Text>
       <Text>{item.content}</Text>
     </View>
   );
 
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={messages}
-        renderItem={renderItem}
-        keyExtractor={(_, index) => index.toString()}
-        contentContainerStyle={{ padding: 12 }}
-        inverted
-      />
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.inner}>
+            <FlatList
+              ref={flatListRef}
+              data={messages}
+              renderItem={renderItem}
+              keyExtractor={(_, index) => index.toString()}
+              contentContainerStyle={styles.messageList}
+              onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+            />
 
-      <View style={styles.inputArea}>
-        <TextInput
-          value={input}
-          onChangeText={setInput}
-          placeholder="Mesaj yaz..."
-          style={styles.input}
-        />
-        <TouchableOpacity onPress={handleSend} style={styles.sendButton}>
-          <Text style={styles.sendText}>Gönder</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+            <View style={styles.inputArea}>
+              <TextInput
+                value={input}
+                onChangeText={setInput}
+                placeholder="Mesaj yaz..."
+                style={styles.input}
+                multiline
+              />
+              <TouchableOpacity onPress={handleSend} style={styles.sendButton}>
+                <Text style={styles.sendText}>Gönder</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  inner: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  messageList: {
+    padding: 12,
+    paddingBottom: 10,
+  },
   message: {
     marginVertical: 8,
     padding: 10,
@@ -115,25 +148,29 @@ const styles = StyleSheet.create({
   },
   inputArea: {
     flexDirection: 'row',
-    padding: 10,
+    padding: 8,
     borderTopWidth: 1,
     borderTopColor: '#eee',
     backgroundColor: '#f9f9f9',
+    alignItems: 'flex-end',
   },
   input: {
     flex: 1,
     backgroundColor: '#fff',
     paddingHorizontal: 12,
+    paddingVertical: Platform.OS === 'ios' ? 10 : 6,
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 20,
     fontSize: 16,
+    maxHeight: 100,
   },
   sendButton: {
     marginLeft: 8,
     backgroundColor: '#007bff',
     borderRadius: 20,
     paddingHorizontal: 16,
+    paddingVertical: 10,
     justifyContent: 'center',
   },
   sendText: {

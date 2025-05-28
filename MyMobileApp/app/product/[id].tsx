@@ -18,8 +18,8 @@ import Icon from '@expo/vector-icons/Ionicons';
 import { auth } from '../../firebase';
 import HeaderOnly from '../../components/HeaderOnly';
 
-const API_URL = 'http://192.168.1.36:8000/api';
-const BASE_URL = 'http://192.168.1.36:8000';
+const API_URL = 'http://192.168.145.203:8000/api';
+const BASE_URL = 'http://192.168.145.203:8000';
 const ALL_CATEGORIES = [
   'Genel','Elektronik','Ev & Bahçe','Moda','Spor',
   'Oyun','Araçlar','Kamera','Kamp','Bisiklet',

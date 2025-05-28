@@ -8,7 +8,7 @@ import { useRouter } from 'expo-router';
 import { auth } from '../firebase';
 import HeaderOnly from '../components/HeaderOnly';
 
-const API_URL = 'http://192.168.1.36:8000/api';
+const API_URL = 'http://192.168.145.203:8000/api';
 
 type Chat = {
   chat_id: number;

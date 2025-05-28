@@ -20,7 +20,7 @@ import { auth } from '../firebase';
 import HeaderWithSearch from '../components/HeaderWithSearch';
 
 
-const API_URL = 'http://192.168.1.36:8000/api';
+const API_URL = 'http://192.168.145.203:8000/api';
 
 const ALL_CATEGORIES = [
   'Genel', 'Elektronik', 'Ev & Bahçe', 'Moda', 'Spor', 'Oyun',

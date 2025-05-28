@@ -22,8 +22,11 @@ export default function Profile() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [showModal, setShowModal] = useState<boolean>(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editFirstName, setEditFirstName] = useState('');
+  const [editLastName, setEditLastName] = useState('');
 
-  const API_URL = 'http://192.168.1.36:8000/api';
+  const API_URL = 'http://192.168.145.203:8000/api';
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -91,6 +94,8 @@ export default function Profile() {
           <Text style={styles.name}>{profile?.firstName} {profile?.lastName}</Text>
           <Text style={styles.email}>{profile?.email}</Text>
 
+          
+
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>{products.length}</Text>
@@ -117,7 +122,7 @@ export default function Profile() {
                 {products.map((item) => (
                   <View key={item.id} style={styles.productCard}>
                     <Image
-                      source={{ uri: `http://192.168.1.36:8000${item.image}` }}
+                      source={{ uri: `http://192.168.145.203:8000${item.image}` }}
                       style={styles.productImage}
                     />
                     <Text style={styles.productTitle}>{item.title}</Text>

@@ -17,7 +17,7 @@ import { useRouter } from 'expo-router';
 import Icon from '@expo/vector-icons/Ionicons';
 import HeaderOnly from '../components/HeaderOnly';
 
-const API_URL = 'http://192.168.1.36:8000/api';
+const API_URL = 'http://192.168.145.203:8000/api';
 
 export default function Favorilerim() {
   const [items, setItems] = useState<any[]>([]);

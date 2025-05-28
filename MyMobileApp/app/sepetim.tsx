@@ -17,7 +17,7 @@ import { useRouter } from 'expo-router';
 import Icon from '@expo/vector-icons/Ionicons';
 import HeaderOnly from '../components/HeaderOnly';
 
-const API_URL = 'http://192.168.1.36:8000/api';
+const API_URL = 'http://192.168.145.203:8000/api';
 const ALL_CATEGORIES = [
   'Genel', 'Elektronik', 'Ev & Bahçe', 'Moda', 'Spor', 'Oyun',
   'Araçlar', 'Kamera', 'Kamp', 'Bisiklet', 'Müzik', 'Ofis', 'Diğer'
@@ -102,7 +102,7 @@ const renderItem = ({ item }: { item: CartItem }) => (
     </TouchableOpacity>
 
     <Image
-      source={{ uri: `http://192.168.1.33:8000${item.image}` }}
+      source={{ uri: `http://192.168.145.203:8000${item.image}` }}
       style={styles.image}
     />
 
